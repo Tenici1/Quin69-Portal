@@ -64,9 +64,9 @@ body {
 
 /* New animation section */
 #animation-section {
-    width: 400px;
     min-width: 400px;
     display: flex;
+    flex: 2;
     flex-direction: column;
     gap: 0;
     background: #0e0e10;

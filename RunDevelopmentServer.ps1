@@ -1,1 +1,1 @@
-live-server --open=./src/index.html --port=8000
+live-server --open=./docs/index.html --port=8000
