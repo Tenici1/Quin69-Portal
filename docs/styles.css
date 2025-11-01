@@ -380,3 +380,72 @@ a:hover {
     padding-left: 20px;
     padding-right: 20px;
 }
+
+#wordcloud-section {
+  min-width: 400px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0;
+  background: #0e0e10;
+  border-left: 1px solid #1f1f23;
+}
+
+#wordcloud {
+  flex: 1;
+  padding: 20px;
+  background: linear-gradient(135deg, #0e0e10 0%, #18181b 100%);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.word-cloud-word {
+  display: inline-block;
+  margin: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: #9147ff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.word-cloud-word:hover {
+  transform: scale(1.1);
+  background: #772ce8;
+  z-index: 10;
+}
+
+/* Size classes for word cloud */
+.word-size-1 { font-size: 12px; background: #3a3a3d; }
+.word-size-2 { font-size: 14px; background: #53535f; }
+.word-size-3 { font-size: 16px; background: #6d6d7a; }
+.word-size-4 { font-size: 18px; background: #9147ff; }
+.word-size-5 { font-size: 20px; background: #772ce8; }
+.word-size-6 { font-size: 22px; background: #5c16c5; }
+.word-size-7 { font-size: 24px; background: #4510a1; }
+
+
+.word-cloud-word {
+  display: inline-block;
+  margin: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: #464649;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.word-cloud-word:hover {
+  transform: scale(1.1);
+  background: #772ce8;
+  z-index: 10;
+  opacity: 1 !important;
+}

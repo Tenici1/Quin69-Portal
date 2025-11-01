@@ -1,4 +1,23 @@
 (async function () {
+
+  let wordTimestamps = {}; // { word: [timestamp1, timestamp2, ...] }
+  const STOP_WORDS = new Set([
+    'the', 'and', 'you', 'that', 'for', 'are', 'with', 'this', 'have', 'but',
+    'was', 'not', 'your', 'all', 'can', 'our', 'will', 'just', 'like', 'get',
+    'has', 'had', 'its', 'how', 'why', 'when', 'where', 'what', 'who', 'which',
+    'their', 'there', 'from', 'they', 'been', 'were', 'then', 'than', 'some',
+    'because', 'would', 'could', 'should', 'might', 'well', 'also', 'very',
+    'into', 'through', 'about', 'upon', 'since', 'until', 'while', 'though',
+    'although', 'however', 'therefore', 'moreover', 'furthermore', 'nevertheless',
+    'nonetheless', 'not', 'no', 'yes', 'ok', 'okay', 'hey', 'hi', 'hello', 'lol',
+    'lmfao', 'lmao', 'rofl', 'haha', 'hehe', 'xd', 'pls', 'please', 'thx', 'thanks',
+    'thank', 'ty', 'omg', 'wtf', 'brb', 'afk', 'imo', 'imho', 'btw', 'fyi',
+    'irl', 'tbh', 'idk', 'smh', 'nsfw', 'sfw', 'gg', 'wp', 'gl', 'hf', 'mb',
+    'rip', 'op', 'nerf', 'buff', 'patch', 'update', 'game', 'play', 'player',
+    'stream', 'twitch', 'chat', 'viewer', 'sub', 'follow', 'bit', 'donation',
+    'quin', 'quin69', '69'
+  ]);
+
   // Image cache to prevent re-downloading
   const imageCache = new Map();
 
@@ -403,6 +422,8 @@
           dbg('PRIVMSG from', displayName, 'message:', message);
           const container = document.createElement('span');
 
+          processMessageForWordCloud(message);
+
           const nativeEmotes = {};
           if (tags.emotes) {
             const emTag = tags.emotes;
@@ -579,8 +600,152 @@
     const counts = getEmoteCounts();
     dbg('heartbeat — counts=' + Object.keys(counts).length);
     updateCountersDisplay();
+    updateWordCloud();
   }, 15000);
   // also update counters frequently
   setInterval(updateCountersDisplay, 1000);
+  setInterval(updateWordCloud, 500);
+
+  // Simpler batch processing without time-based concerns
+  let pendingWords = [];
+  let wordCloudBatchTimeout = null;
+  const WORDCLOUD_BATCH_DELAY = 3000;
+
+  function processMessageForWordCloud(message) {
+    const words = message.split(/\s+/);
+    const nonEmoteWords = words.filter(word => {
+      const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
+
+      if (cleanWord.length < 3 || STOP_WORDS.has(cleanWord) || cleanWord.includes("www") || cleanWord.includes("http")) return false;
+      if (bttvMap[cleanWord] || ffzMap[cleanWord] || stvMap[cleanWord]) return false;
+      if (bttvMap[word] || ffzMap[word] || stvMap[word]) return false;
+      if (/^\d+$/.test(cleanWord)) return false;
+      if (/^[^\w]+$/.test(cleanWord)) return false;
+
+      return true;
+    });
+
+    pendingWords.push(...nonEmoteWords.map(word => ({
+      word: word.toLowerCase().replace(/[^\w]/g, '')
+    })));
+
+    scheduleBatchWordCloudUpdate();
+  }
+
+  function scheduleBatchWordCloudUpdate() {
+    if (wordCloudBatchTimeout) return; // Already scheduled
+
+    wordCloudBatchTimeout = setTimeout(processWordCloudBatch, WORDCLOUD_BATCH_DELAY);
+  }
+
+  function processWordCloudBatch() {
+    if (pendingWords.length === 0) return;
+
+    const timestamp = Date.now();
+    pendingWords.forEach(({ word }) => {
+      if (word.length >= 3) {
+        if (!wordTimestamps[word]) wordTimestamps[word] = [];
+        wordTimestamps[word].push(timestamp); // Just add to the array
+      }
+    });
+
+    pendingWords = [];
+    wordCloudBatchTimeout = null;
+
+    updateWordCloud();
+  }
+
+  // Add this function to update the word cloud display
+  function updateWordCloud() {
+    const wordCounts = getWordCountsWithDecay();
+
+    const wordcloudEl = document.getElementById('wordcloud');
+    if (!wordcloudEl) return;
+
+    wordcloudEl.innerHTML = '';
+
+    const topWords = Object.entries(wordCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50);
+
+    if (topWords.length === 0) {
+      const emptyMsg = document.createElement('div');
+      emptyMsg.className = 'small';
+      emptyMsg.textContent = 'No words to display yet.';
+      emptyMsg.style.color = '#777';
+      emptyMsg.style.textAlign = 'center';
+      emptyMsg.style.width = '100%';
+      emptyMsg.style.padding = '20px';
+      wordcloudEl.appendChild(emptyMsg);
+      return;
+    }
+
+    const maxCount = Math.max(...topWords.map(([_, count]) => count));
+
+    topWords.forEach(([word, count]) => {
+      const wordEl = document.createElement('span');
+      wordEl.className = 'word-cloud-word';
+
+      const sizeLevel = Math.min(7, Math.max(1, Math.ceil((count / maxCount) * 7)));
+      wordEl.classList.add(`word-size-${sizeLevel}`);
+
+      wordEl.textContent = word;
+      wordEl.title = `Used ${count} times total`;
+
+      wordEl.addEventListener('click', () => {
+        filterChatByWord(word);
+      });
+
+      wordcloudEl.appendChild(wordEl);
+    });
+  }
+
+  function getWordCountsWithDecay() {
+    const windowMs = getTimeWindowMs();
+    const now = Date.now();
+    const counts = {};
+
+    for (const word in wordTimestamps) {
+      const timestamps = wordTimestamps[word];
+
+      if (windowMs === Infinity) {
+        // All time - simple count
+        counts[word] = timestamps.length;
+      } else {
+        // Weight recent usage more heavily
+        let weightedCount = 0;
+        timestamps.forEach(ts => {
+          const age = now - ts;
+          if (age <= windowMs) {
+            // Linear decay: newer = higher weight
+            const weight = 1 - (age / windowMs);
+            weightedCount += weight;
+          }
+          // Older timestamps contribute 0
+        });
+        counts[word] = Math.round(weightedCount * 10) / 10; // Keep decimal for smoothness
+      }
+    }
+    return counts;
+  }
+
+  function filterChatByWord(word) {
+    // Simple implementation: highlight messages containing the word
+    const messages = document.querySelectorAll('#chat .msg');
+    messages.forEach(msg => {
+      const text = msg.textContent.toLowerCase();
+      if (text.includes(word.toLowerCase())) {
+        msg.style.backgroundColor = 'rgba(145, 71, 255, 0.2)';
+        msg.style.border = '1px solid #9147ff';
+        setTimeout(() => {
+          msg.style.backgroundColor = '';
+          msg.style.border = '';
+        }, 3000);
+      }
+    });
+
+    dbg(`Highlighted messages containing: ${word}`);
+  }
+
 
 })();
