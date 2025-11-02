@@ -11,7 +11,15 @@
     }
 
     window.addEventListener('resize', updateContainerRect);
-    updateContainerRect();
+    // Wait for layout to settle before getting initial dimensions
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateContainerRect);
+    } else {
+        // DOM already loaded, wait one frame to ensure layout is complete
+        requestAnimationFrame(() => {
+            updateContainerRect();
+        });
+    }
 
     // Particle class for bouncing emotes
     class EmoteParticle {

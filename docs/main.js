@@ -174,7 +174,7 @@
       const img = getCachedImage(meta.url || '', key, 'emote-img');
       img.onerror = () => { img.style.display = 'none'; };
       const spanCode = document.createElement('div');
-      spanCode.innerHTML = `<span class="emote-code">${escapeHtml(key)}</span><div class="small">${meta.source || ''}</div>`;
+      spanCode.innerHTML = `<span class="emote-code">${escapeHtml(key)}</span>`;
       const spanCount = document.createElement('div');
       spanCount.className = 'count';
       spanCount.textContent = count;
@@ -389,7 +389,7 @@
       socket.send('PASS SCHMOOPIIE');
       socket.send('NICK ' + anon);
       socket.send('JOIN #' + chan);
-      logStatus('Connected. Joined #' + chan);
+      logStatus('Connected');
     });
 
     socket.addEventListener('message', (ev) => {
@@ -465,7 +465,7 @@
           }
 
           const ts = new Date().toLocaleTimeString();
-          addChatLine(`<div class="meta">${escapeHtml(displayName)} <span class="small">#${channel} • ${ts}</span></div>`);
+          addChatLine(`<div class="meta">${escapeHtml(displayName)} • ${ts}</span></div>`);
           const wrapper = document.createElement('div');
           wrapper.className = 'msg';
           wrapper.appendChild(container);
