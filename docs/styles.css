@@ -86,6 +86,8 @@ body {
     flex: 1;
     background: linear-gradient(135deg, #0e0e10 0%, #18181b 100%);
     display: block;
+    position: relative; 
+    overflow: hidden; 
 }
 
 #right {

@@ -1,21 +1,9 @@
-// Animation controller for bouncing emotes
+// Animation controller for bouncing emotes using DOM elements
 (function () {
-    const canvas = document.getElementById('emote-canvas');
-    const ctx = canvas.getContext('2d');
-
+    const container = document.getElementById('emote-canvas');
     let emoteParticles = [];
-    let images = new Map(); // Cache loaded images
+    let images = new Map();
     let animationFrame = null;
-
-    // Resize canvas to fill container
-    function resizeCanvas() {
-        const rect = canvas.parentElement.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
 
     // Particle class for bouncing emotes
     class EmoteParticle {
@@ -23,78 +11,71 @@
             this.imageUrl = imageUrl;
             this.emoteKey = emoteKey;
             this.count = count;
-            this.x = Math.random() * canvas.width;
-            this.y = Math.random() * canvas.height;
-            this.size = Math.min(58 + Math.log(count) * 8, 64); // Size based on count
+            
+            const rect = container.getBoundingClientRect();
+            this.x = Math.random() * (rect.width - 64);
+            this.y = Math.random() * (rect.height - 64);
+            this.baseSize = Math.min(58 + Math.log(count) * 8, 64);
             this.vx = (Math.random() - 0.5) * 3;
             this.vy = (Math.random() - 0.5) * 3;
-            this.rotation = Math.random() * Math.PI * 2;
-            this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+            this.rotation = Math.random() * 360;
+            this.rotationSpeed = (Math.random() - 0.5) * 2;
             this.opacity = 0.9;
-            this.loaded = false;
 
-            // Load image if not cached
-            if (images.has(imageUrl)) {
-                this.image = images.get(imageUrl);
-                this.loaded = this.image.complete;
-            } else {
-                this.image = new Image();
-                this.image.crossOrigin = 'anonymous';
-                this.image.onload = () => {
-                    this.loaded = true;
-                    images.set(imageUrl, this.image);
-                };
-                this.image.onerror = () => {
-                    console.warn('Failed to load emote:', imageUrl);
-                };
-                this.image.src = imageUrl;
-            }
+            // Create DOM element
+            this.element = document.createElement('img');
+            this.element.src = imageUrl;
+            this.element.alt = emoteKey;
+            this.element.crossOrigin = 'anonymous';
+            this.element.style.position = 'absolute';
+            this.element.style.pointerEvents = 'none';
+            this.element.style.maxWidth = this.baseSize + 'px';
+            this.element.style.maxHeight = this.baseSize + 'px';
+            this.element.style.opacity = this.opacity;
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
+            
+            container.appendChild(this.element);
+
+            this.element.onerror = () => {
+                console.warn('Failed to load emote:', imageUrl);
+                this.remove();
+            };
         }
 
         update() {
+            const rect = container.getBoundingClientRect();
+            const width = this.element.offsetWidth || this.baseSize;
+            const height = this.element.offsetHeight || this.baseSize;
+
             this.x += this.vx;
             this.y += this.vy;
             this.rotation += this.rotationSpeed;
 
             // Bounce off walls
-            if (this.x - this.size / 2 < 0 || this.x + this.size / 2 > canvas.width) {
+            if (this.x < 0 || this.x + width > rect.width) {
                 this.vx *= -1;
-                this.x = Math.max(this.size / 2, Math.min(canvas.width - this.size / 2, this.x));
+                this.x = Math.max(0, Math.min(rect.width - width, this.x));
             }
-            if (this.y - this.size / 2 < 0 || this.y + this.size / 2 > canvas.height) {
+            if (this.y < 0 || this.y + height > rect.height) {
                 this.vy *= -1;
-                this.y = Math.max(this.size / 2, Math.min(canvas.height - this.size / 2, this.y));
+                this.y = Math.max(0, Math.min(rect.height - height, this.y));
             }
+
+            // Update DOM position
+            this.element.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
         }
 
-        draw() {
-            if (!this.loaded) return;
-
-            ctx.save();
-            ctx.globalAlpha = this.opacity;
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.rotation);
-
-            // Draw emote
-            ctx.drawImage(
-                this.image,
-                -this.size / 2,
-                -this.size / 2,
-                this.size,
-                this.size
-            );
-
-            ctx.restore();
+        remove() {
+            if (this.element && this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
         }
     }
 
     // Animation loop
     function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         emoteParticles.forEach(particle => {
             particle.update();
-            particle.draw();
         });
 
         animationFrame = requestAnimationFrame(animate);
@@ -102,19 +83,23 @@
 
     // Update particles from emote counts
     function updateFromEmoteCounts(emoteCounts, emoteMeta) {
-        // Get top emotes (limit total particles to prevent performance issues)
         const topEmotes = Object.entries(emoteCounts)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 50); // More emotes allowed
+            .slice(0, 50);
 
-        // Build map of how many particles each emote should have
         const targetCounts = new Map();
         topEmotes.forEach(([key, count]) => {
-            targetCounts.set(key, Math.min(count, 100)); // Cap at 100 per emote
+            targetCounts.set(key, Math.min(count, 100));
         });
 
         // Remove particles for emotes no longer in use
-        emoteParticles = emoteParticles.filter(p => targetCounts.has(p.emoteKey));
+        emoteParticles = emoteParticles.filter(p => {
+            if (!targetCounts.has(p.emoteKey)) {
+                p.remove();
+                return false;
+            }
+            return true;
+        });
 
         // Add/remove particles to match counts
         targetCounts.forEach((targetCount, key) => {
@@ -124,15 +109,14 @@
             const currentCount = emoteParticles.filter(p => p.emoteKey === key).length;
 
             if (currentCount < targetCount) {
-                // Add more particles
                 for (let i = 0; i < targetCount - currentCount; i++) {
                     emoteParticles.push(new EmoteParticle(meta.url, key, 1));
                 }
             } else if (currentCount > targetCount) {
-                // Remove excess particles
                 const toRemove = currentCount - targetCount;
                 const matching = emoteParticles.filter(p => p.emoteKey === key);
                 for (let i = 0; i < toRemove; i++) {
+                    matching[i].remove();
                     const idx = emoteParticles.indexOf(matching[i]);
                     if (idx !== -1) emoteParticles.splice(idx, 1);
                 }
@@ -148,5 +132,5 @@
     // Start animation
     animate();
 
-    console.log('[ANIMATION] Emote animation initialized');
+    console.log('[ANIMATION] Emote animation initialized (DOM mode)');
 })();
