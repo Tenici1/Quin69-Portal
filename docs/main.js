@@ -134,7 +134,14 @@
     return counts;
   }
 
+  let lastCounterUpdate = 0;
+  const COUNTER_UPDATE_INTERVAL = 500;
+
   function updateCountersDisplay() {
+    const now = Date.now();
+    if (now - lastCounterUpdate < COUNTER_UPDATE_INTERVAL) return;
+    lastCounterUpdate = now;
+
     const emoteCounts = getEmoteCounts();
     const rows = Object.entries(emoteCounts)
       .sort((a, b) => b[1] - a[1])
