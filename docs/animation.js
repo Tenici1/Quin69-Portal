@@ -4,6 +4,14 @@
     let emoteParticles = [];
     let images = new Map();
     let animationFrame = null;
+    let containerRect = null;
+
+    function updateContainerRect() {
+        containerRect = container.getBoundingClientRect();
+    }
+
+    window.addEventListener('resize', updateContainerRect);
+    updateContainerRect();
 
     // Particle class for bouncing emotes
     class EmoteParticle {
@@ -11,7 +19,7 @@
             this.imageUrl = imageUrl;
             this.emoteKey = emoteKey;
             this.count = count;
-            
+
             const rect = container.getBoundingClientRect();
             this.x = Math.random() * (rect.width - 64);
             this.y = Math.random() * (rect.height - 64);
@@ -33,7 +41,7 @@
             this.element.style.maxHeight = this.baseSize + 'px';
             this.element.style.opacity = this.opacity;
             this.element.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
-            
+
             container.appendChild(this.element);
 
             this.element.onerror = () => {
@@ -43,7 +51,6 @@
         }
 
         update() {
-            const rect = container.getBoundingClientRect();
             const width = this.element.offsetWidth || this.baseSize;
             const height = this.element.offsetHeight || this.baseSize;
 
@@ -52,13 +59,13 @@
             this.rotation += this.rotationSpeed;
 
             // Bounce off walls
-            if (this.x < 0 || this.x + width > rect.width) {
+            if (this.x < 0 || this.x + width > containerRect.width) {
                 this.vx *= -1;
-                this.x = Math.max(0, Math.min(rect.width - width, this.x));
+                this.x = Math.max(0, Math.min(containerRect.width - width, this.x));
             }
-            if (this.y < 0 || this.y + height > rect.height) {
+            if (this.y < 0 || this.y + height > containerRect.height) {
                 this.vy *= -1;
-                this.y = Math.max(0, Math.min(rect.height - height, this.y));
+                this.y = Math.max(0, Math.min(containerRect.height - height, this.y));
             }
 
             // Update DOM position
