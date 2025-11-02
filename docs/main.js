@@ -97,6 +97,11 @@
   function logStatus(text) { statusEl.textContent = text; dbg(text); }
 
   function addChatLine(html) {
+    const MAX_CHAT_MESSAGES = 100;
+    if (chatEl.children.length > MAX_CHAT_MESSAGES) {
+      chatEl.removeChild(chatEl.firstChild);
+    }
+
     const div = document.createElement('div');
     div.className = 'msg';
     div.innerHTML = html;
