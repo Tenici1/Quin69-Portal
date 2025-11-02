@@ -1,6 +1,6 @@
 (async function () {
 
-  let wordTimestamps = {}; // { word: [timestamp1, timestamp2, ...] }
+  let wordTimestamps = {};
   const STOP_WORDS = new Set([
     'the', 'and', 'you', 'that', 'for', 'are', 'with', 'this', 'have', 'but',
     'was', 'not', 'your', 'all', 'can', 'our', 'will', 'just', 'like', 'get',
@@ -25,7 +25,6 @@
     const cached = imageCache.get(url);
 
     if (cached instanceof Image) {
-      // 1. BEST CASE: Image is loaded and in our cache. Return a clone.
       return cached.cloneNode(false);
     }
 
@@ -60,34 +59,21 @@
       console.warn('Failed to load master cached image:', url);
     };
 
-    // Return the master image for this first request.
-    // It will be added to the DOM and load itself.
     return masterImg;
   }
 
-  // small helper to log to both console and on-page debug panel
+  // small helper to log to console
   function dbg(...args) {
     const text = args.map(a => {
       if (a instanceof Error) return a.stack || a.message;
       try { return (typeof a === 'object') ? JSON.stringify(a) : String(a); } catch (e) { return String(a); }
     }).join(' ');
     console.log('[APP]', text);
-    appendDebug(text);
-  }
-  function appendDebug(text) {
-    const el = document.getElementById('debug');
-    if (!el) return;
-    const d = document.createElement('div');
-    d.className = 'dbg-line';
-    const ts = new Date().toLocaleTimeString();
-    d.textContent = `[${ts}] ${text}`;
-    el.appendChild(d);
-    el.scrollTop = el.scrollHeight;
   }
 
   // config
-  const CHANNEL = () => document.getElementById('channel').value.trim().replace(/^#/, '');
-  const BTTV_USER_ID = '56649026'; // quin69 Twitch user id from earlier
+  const CHANNEL = 'quin69';
+  const BTTV_USER_ID = '56649026'; // quin69 Twitch user id
   const BTTV_USER_URL = `https://api.betterttv.net/3/cached/users/twitch/${BTTV_USER_ID}`;
   const BTTV_GLOBAL_URL = 'https://api.betterttv.net/3/cached/emotes/global';
   const FFZ_ROOM_URL = (chan) => `https://api.frankerfacez.com/v1/room/${chan}`;
@@ -98,12 +84,11 @@
   const chatEl = document.getElementById('chat');
   const counterEl = document.getElementById('counter');
   const restartBtn = document.getElementById('restart');
-  const clearDebugBtn = document.getElementById('clear-debug');
   const timeWindowSelect = document.getElementById('time-window');
 
   // state
   let socket = null;
-  let emoteTimestamps = {}; // { emoteKey: [timestamp1, timestamp2, ...] }
+  let emoteTimestamps = {};
   let emoteMeta = {};
   let bttvMap = {};
   let ffzMap = {};
@@ -122,7 +107,7 @@
   function getTimeWindowMs() {
     const value = timeWindowSelect.value;
     if (value === 'all') return Infinity;
-    return parseInt(value) * 1000; // convert seconds to milliseconds
+    return parseInt(value) * 1000;
   }
 
   function pruneOldTimestamps() {
@@ -205,7 +190,6 @@
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // fetch BTTV/FFZ lists (with logs)
   async function loadThirdPartyEmotes() {
     try {
       dbg('Fetching BTTV user emotes:', BTTV_USER_URL);
@@ -261,7 +245,7 @@
     }
 
     try {
-      const chan = CHANNEL();
+      const chan = CHANNEL;
       dbg('Fetching FFZ room for channel:', chan);
       const ffzResp = await fetch(FFZ_ROOM_URL(chan));
       dbg('FFZ room status:', ffzResp.status);
@@ -306,7 +290,7 @@
 
     // Load 7TV emotes
     try {
-      const chan = CHANNEL();
+      const chan = CHANNEL;
       dbg('Fetching 7TV user emotes:', STV_URL(chan));
       const stvResp = await fetch(STV_URL(chan));
       if (stvResp.ok) {
@@ -366,11 +350,7 @@
   }
 
   function connect() {
-    const chan = CHANNEL();
-    if (!chan) {
-      logStatus('Enter a channel name.');
-      return;
-    }
+    const chan = CHANNEL;
     dbg('Starting connect() to channel:', chan);
     try { if (socket) socket.close(); } catch (e) { }
     socket = null;
@@ -401,25 +381,25 @@
     });
 
     socket.addEventListener('message', (ev) => {
-      dbg('WS message raw length', (ev.data && ev.data.length) || 0);
+      //dbg('WS message raw length', (ev.data && ev.data.length) || 0);
       const data = ev.data;
       const lines = data.split(/\r\n/).filter(Boolean);
-      dbg('WS message contained lines:', lines.length);
+      //dbg('WS message contained lines:', lines.length);
       for (const line of lines) {
-        dbg('IRC line:', line);
+        //dbg('IRC line:', line);
         if (line.startsWith('PING')) {
-          dbg('Responding to PING');
+          //dbg('Responding to PING');
           socket.send(line.replace('PING', 'PONG'));
           continue;
         }
         const parsed = parseIrcLine(line);
-        dbg('Parsed IRC:', parsed.command, parsed.tags && Object.keys(parsed.tags).slice(0, 5));
+        //dbg('Parsed IRC:', parsed.command, parsed.tags && Object.keys(parsed.tags).slice(0, 5));
         if (parsed.command === 'PRIVMSG') {
           const channel = parsed.params[0];
           const message = parsed.params.slice(-1)[0] || '';
           const tags = parsed.tags || {};
           const displayName = tags['display-name'] || (parsed.prefix ? parsed.prefix.split('!')[0] : 'unknown');
-          dbg('PRIVMSG from', displayName, 'message:', message);
+          //dbg('PRIVMSG from', displayName, 'message:', message);
           const container = document.createElement('span');
 
           processMessageForWordCloud(message);
@@ -483,9 +463,9 @@
         }
 
         // log other interesting commands
-        if (parsed.command && parsed.command !== 'PRIVMSG' && parsed.command !== 'PONG') {
-          dbg('IRC command seen:', parsed.command);
-        }
+        // if (parsed.command && parsed.command !== 'PRIVMSG' && parsed.command !== 'PONG') {
+        //  dbg('IRC command seen:', parsed.command);
+        //}
       }
     });
 
@@ -516,7 +496,7 @@
         frag.appendChild(img);
         const key = `${tok}`;
         incrEmote(key, { source: 'bttv', url: meta.url });
-        dbg('Matched BTTV emote token:', tok);
+        //dbg('Matched BTTV emote token:', tok);
         matched = true;
       }
       if (!matched && ffzMap[tok]) {
@@ -525,7 +505,7 @@
         frag.appendChild(img);
         const key = `${tok}`;
         incrEmote(key, { source: 'ffz', url: meta.url });
-        dbg('Matched FFZ emote token:', tok);
+        //dbg('Matched FFZ emote token:', tok);
         matched = true;
       }
       if (!matched && stvMap[tok]) {
@@ -534,7 +514,7 @@
         frag.appendChild(img);
         const key = `${tok}`;
         incrEmote(key, { source: '7TV', url: meta.url });
-        dbg('Matched 7TV emote token:', tok);
+        // dbg('Matched 7TV emote token:', tok);
         matched = true;
       }
       if (!matched) {
@@ -548,7 +528,7 @@
             incrEmote(key, { source: 'bttv', url: meta.url });
             const trailing = tok.slice(tok.indexOf(cleaned) + cleaned.length);
             if (trailing) frag.appendChild(document.createTextNode(trailing));
-            dbg('Matched BTTV with punctuation:', cleaned, 'orig token:', tok);
+            //dbg('Matched BTTV with punctuation:', cleaned, 'orig token:', tok);
             matched = true;
           } else if (ffzMap[cleaned]) {
             const meta = ffzMap[cleaned];
@@ -558,7 +538,7 @@
             incrEmote(key, { source: 'ffz', url: meta.url });
             const trailing = tok.slice(tok.indexOf(cleaned) + cleaned.length);
             if (trailing) frag.appendChild(document.createTextNode(trailing));
-            dbg('Matched FFZ with punctuation:', cleaned, 'orig token:', tok);
+            //dbg('Matched FFZ with punctuation:', cleaned, 'orig token:', tok);
             matched = true;
           } else if (stvMap[cleaned]) {
             const meta = stvMap[cleaned];
@@ -568,7 +548,7 @@
             incrEmote(key, { source: '7TV', url: meta.url });
             const trailing = tok.slice(tok.indexOf(cleaned) + cleaned.length);
             if (trailing) frag.appendChild(document.createTextNode(trailing));
-            dbg('Matched 7TV with punctuation:', cleaned, 'orig token:', tok);
+            //dbg('Matched 7TV with punctuation:', cleaned, 'orig token:', tok);
             matched = true;
           }
         }
@@ -590,7 +570,7 @@
   });
 
   // initial
-  dbg('Script start. Channel default:', CHANNEL());
+  dbg('Script start. Channel default:', CHANNEL);
   await loadThirdPartyEmotes();
   dbg('Now connecting to chat...');
   connect();
@@ -599,12 +579,14 @@
   setInterval(() => {
     const counts = getEmoteCounts();
     dbg('heartbeat — counts=' + Object.keys(counts).length);
+  }, 15000);
+
+  setInterval(intervalFunction, 1000);
+
+  function intervalFunction() {
     updateCountersDisplay();
     updateWordCloud();
-  }, 15000);
-  // also update counters frequently
-  setInterval(updateCountersDisplay, 1000);
-  setInterval(updateWordCloud, 500);
+  }
 
   // Simpler batch processing without time-based concerns
   let pendingWords = [];
@@ -655,7 +637,6 @@
     updateWordCloud();
   }
 
-  // Add this function to update the word cloud display
   function updateWordCloud() {
     const wordCounts = getWordCountsWithDecay();
 
@@ -746,6 +727,5 @@
 
     dbg(`Highlighted messages containing: ${word}`);
   }
-
 
 })();
