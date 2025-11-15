@@ -1,27 +1,59 @@
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    height: 100dvh;
     margin: 0;
     padding: 0;
-    display: flex;
-    gap: 0;
-    height: 100vh;
     box-sizing: border-box;
     background: #1e1e1e;
     color: #efeff1;
 }
 
-#left {
-    width: 340px;
-    min-width: 340px;
+#left-container {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    flex: 0 0 auto;
+    width: 340px;
+    height: 100%;
     background: #18181b;
     border-right: 1px solid #1f1f23;
 }
 
+#right-container {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 0;
+    background: #18181b;
+    border-right: 1px solid #231f22;
+}
+
+#emote-counter-section {
+    width: 300px;
+    background: #0e0e10;
+}
+
+#animation-section {
+    display: flex;
+    flex: 111 1 250px;
+    flex-direction: column;
+    background: #0e0e10;
+    border-left: 1px solid #1f1f23;
+    border-right: 1px solid #1f1f23;
+}
+
+#wordcloud-section {
+    width: 350px;
+    background: #0e0e10;
+    border-left: 1px solid #1f1f23;
+}
+
+#playlist-section {
+    flex: 1 1 450px;
+    background: #0e0e10;
+}
+
 #chat {
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 12px 16px;
@@ -53,27 +85,6 @@ body {
     border-bottom: 1px solid #2b2b30;
 }
 
-#mid {
-    width: 340px;
-    min-width: 340px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    background: #0e0e10;
-}
-
-/* New animation section */
-#animation-section {
-    min-width: 400px;
-    display: flex;
-    flex: 2;
-    flex-direction: column;
-    gap: 0;
-    background: #0e0e10;
-    border-left: 1px solid #1f1f23;
-    border-right: 1px solid #1f1f23;
-}
-
 .animation-header {
     padding: 12px 16px;
     background: #18181b;
@@ -86,16 +97,8 @@ body {
     flex: 1;
     background: linear-gradient(135deg, #0e0e10 0%, #18181b 100%);
     display: block;
-    position: relative; 
-    overflow: hidden; 
-}
-
-#right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    background: #0e0e10;
+    position: relative;
+    overflow: hidden;
 }
 
 #counter {
@@ -275,7 +278,7 @@ button:active {
     color: #adadb8;
 }
 
-#mid > div:first-child {
+#mid>div:first-child {
     padding: 12px 16px;
     background: #18181b;
     border-bottom: 1px solid #1f1f23;
@@ -283,7 +286,7 @@ button:active {
     font-size: 14px;
 }
 
-#mid > div:nth-child(3) {
+#mid>div:nth-child(3) {
     padding: 12px 16px;
     background: #18181b;
     border-top: 1px solid #1f1f23;
@@ -292,13 +295,10 @@ button:active {
     font-size: 14px;
 }
 
-/* Playlist styles */
-.container {
+.playlist-container {
     padding: 20px;
     background-color: #18181b;
     color: #fff;
-    width: 50vh;
-    max-width: 800px;
 }
 
 .page-title {
@@ -378,76 +378,93 @@ a:hover {
     width: 100%;
 }
 
-.content {
+.playlist-content {
     padding-left: 20px;
     padding-right: 20px;
 }
 
-#wordcloud-section {
-  min-width: 400px;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0;
-  background: #0e0e10;
-  border-left: 1px solid #1f1f23;
-}
-
 #wordcloud {
-  flex: 1;
-  padding: 20px;
-  background: linear-gradient(135deg, #0e0e10 0%, #18181b 100%);
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 8px;
-  overflow: hidden;
-  position: relative;
+    flex: 1;
+    padding: 20px;
+    background: linear-gradient(135deg, #0e0e10 0%, #18181b 100%);
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 8px;
+    overflow: hidden;
+    position: relative;
 }
 
 .word-cloud-word {
-  display: inline-block;
-  margin: 4px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: #9147ff;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+    display: inline-block;
+    margin: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: #9147ff;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
 }
 
 .word-cloud-word:hover {
-  transform: scale(1.1);
-  background: #772ce8;
-  z-index: 10;
+    transform: scale(1.1);
+    background: #772ce8;
+    z-index: 10;
 }
 
 /* Size classes for word cloud */
-.word-size-1 { font-size: 12px; background: #3a3a3d; }
-.word-size-2 { font-size: 14px; background: #53535f; }
-.word-size-3 { font-size: 16px; background: #6d6d7a; }
-.word-size-4 { font-size: 18px; background: #9147ff; }
-.word-size-5 { font-size: 20px; background: #772ce8; }
-.word-size-6 { font-size: 22px; background: #5c16c5; }
-.word-size-7 { font-size: 24px; background: #4510a1; }
+.word-size-1 {
+    font-size: 12px;
+    background: #3a3a3d;
+}
+
+.word-size-2 {
+    font-size: 14px;
+    background: #53535f;
+}
+
+.word-size-3 {
+    font-size: 16px;
+    background: #6d6d7a;
+}
+
+.word-size-4 {
+    font-size: 18px;
+    background: #9147ff;
+}
+
+.word-size-5 {
+    font-size: 20px;
+    background: #772ce8;
+}
+
+.word-size-6 {
+    font-size: 22px;
+    background: #5c16c5;
+}
+
+.word-size-7 {
+    font-size: 24px;
+    background: #4510a1;
+}
 
 
 .word-cloud-word {
-  display: inline-block;
-  margin: 4px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: #464649;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Inter', sans-serif;
+    display: inline-block;
+    margin: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: #464649;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
 }
 
 .word-cloud-word:hover {
-  transform: scale(1.1);
-  background: #772ce8;
-  z-index: 10;
-  opacity: 1 !important;
+    transform: scale(1.1);
+    background: #772ce8;
+    z-index: 10;
+    opacity: 1 !important;
 }
